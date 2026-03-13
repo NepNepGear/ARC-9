@@ -364,7 +364,7 @@ function SWEP:DoPresetCapture(filename, foricon)
 
     render.OverrideColorWriteEnable(true, false)
     -- self:GetVM():DrawModel()
-    self:DrawCustomModel(true, pos + Vector(0.5, -0.5, -0.5), ang)
+    --self:DrawCustomModel(true, pos + Vector(0.5, -0.5, -0.5), ang)
     render.OverrideColorWriteEnable(false, false)
 
     render.BlurRenderTarget(cammat, 6, 6, 2)

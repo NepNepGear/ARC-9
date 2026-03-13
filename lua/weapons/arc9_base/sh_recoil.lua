@@ -176,6 +176,7 @@ do
 
         local MAGIC1 = 210
         local MAGIC2 = 210
+		local mathMin = math.min
 
         local ft = CLIENT and RealFrameTime() or FrameTime()
         if ft == 0 then return end -- game is paused
@@ -183,8 +184,8 @@ do
         if weirdfix then
             -- MAGIC1 = 210 / (engine.TickInterval() / 0.015)
             -- MAGIC2 = 210 / (engine.TickInterval() / 0.015)
-            MAGIC1 = math.min(MAGIC1, 210 / (ft / 0.015))
-            MAGIC2 = math.min(MAGIC2, 210 / (ft / 0.015))
+            MAGIC1 = mathMin(MAGIC1, 210 / (ft / 0.015))
+            MAGIC2 = mathMin(MAGIC2, 210 / (ft / 0.015))
         end
         
         if CLIENT and ft > 0.09 then -- super lag detected, clamping recoil
@@ -317,12 +318,14 @@ do
     function SWEP:ThinkRecoil()
         local ru = self.dt.RecoilUp
         local rs = self.dt.RecoilSide
+		local mathAbs = math.abs
+		local mathHuge = math.huge
 
         swepGetProcessedValue = swepGetProcessedValue or self.GetProcessedValue
 
 		swepThinkVisualRecoil(self)
 
-        if math.abs(ru) < smolnumber and math.abs(rs) < smolnumber and self.dt.RecoilAmount == 0 then return end
+        if mathAbs(ru) < smolnumber and mathAbs(rs) < smolnumber and self.dt.RecoilAmount == 0 then return end
 
         local rdr = swepGetProcessedValue(self, "RecoilDissipationRate", true)
         local ct = CurTime()
@@ -330,14 +333,14 @@ do
 
         if (weaponGetNextPrimaryFire(self) + swepGetProcessedValue(self, "RecoilResetTime", true)) < ct then
             -- as soon as dissipation kicks in, recoil is clamped to the modifer cap; this is to not break visual recoil
-            self:SetRecoilAmount(math.Clamp(self.dt.RecoilAmount - (ft * rdr), 0, swepGetProcessedValue(self, "UseVisualRecoil", true) and math.huge or swepGetProcessedValue(self, "RecoilModifierCap")))
+            self:SetRecoilAmount(math.Clamp(self.dt.RecoilAmount - (ft * rdr), 0, swepGetProcessedValue(self, "UseVisualRecoil", true) and mathHuge or swepGetProcessedValue(self, "RecoilModifierCap")))
             if weaponGetNextPrimaryFire(self) + swepGetProcessedValue(self, "RecoilFullResetTime", true) < ct then
                 self:SetRecoilAmount(0)
             end
             -- print(math.Round(rec))
         end
 
-        if math.abs(ru) > smolnumber or math.abs(rs) > smolnumber then
+        if mathAbs(ru) > smolnumber or mathAbs(rs) > smolnumber then
             local new_ru = ru - (ft * ru * 10)
             local new_rs = rs - (ft * rs * 10)
 

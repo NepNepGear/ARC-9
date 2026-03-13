@@ -78,7 +78,7 @@ function EFFECT:Render()
     local startpos = self.StartPos + (d * 0.1 * (self.EndPos - self.StartPos))
     local endpos = self.StartPos + (d * (self.EndPos - self.StartPos))
     local size = self.Size * math.Clamp(math.log(EyePos():DistToSqr(endpos) - math.pow(256, 2)), 0, math.huge)
-
+	local Rendering = render
     -- debugoverlay.Axis( startpos, Angle(), 16, 0, true )
     -- debugoverlay.Axis( endpos, Angle(), 16, 0, true )
     -- debugoverlay.Line( startpos, endpos, 0.1, color_white, true )
@@ -90,13 +90,13 @@ function EFFECT:Render()
     local dot = math.abs(EyeAngles():Forward():Dot(vel:GetNormalized()))
     --dot = math.Clamp(((dot * dot) - 0.25) * 5, 0, 1)
     local headsize = size * dot * 2
-    render.SetMaterial(head)
-    render.DrawSprite(endpos, headsize, headsize, col)
+    Rendering.SetMaterial(head)
+    Rendering.DrawSprite(endpos, headsize, headsize, col)
 
     local tail = (self.Dir * math.min(self.Speed / 25, 512, (endpos - startpos):Length() - 64))
-    render.SetMaterial(tracer)
-    render.DrawBeam(endpos, endpos - tail, size * 0.75, 1, 0, col)
+    Rendering.SetMaterial(tracer)
+    Rendering.DrawBeam(endpos, endpos - tail, size * 0.75, 1, 0, col)
 
-    render.SetMaterial(smoke)
-    render.DrawBeam( endpos - tail, startpos, size * d2, 0, 1, col2)
+    Rendering.SetMaterial(smoke)
+    Rendering.DrawBeam( endpos - tail, startpos, size * d2, 0, 1, col2)
 end

@@ -28,18 +28,19 @@ function SWEP:DoBodygroups(wm, cm)
     mdl:SetBodyGroups(dbg or "")
 
     local eles = self:GetAttachmentElements()
-
-    for _, ele in ipairs(eles) do
-        for _, j in pairs(ele.Bodygroups or {}) do
+	for i = 1 , #eles do
+		 local element = eles[i]
+		 for _, j in pairs(element.Bodygroups or {}) do
             if !istable(j) then continue end
             if !isnumber(j[1]) then continue end -- print("arc9: something gone horribly wrong in bodygroup code!")
             mdl:SetBodygroup(j[1] or 0, j[2] or 0)
         end
 
-        if ele.Skin then
-            mdl:SetSkin(ele.Skin)
+        if eles[i].Skin then
+            mdl:SetSkin(eles[i].Skin)
         end
-    end
+	end
+
 
     if !isnpc then
         for i = 0, mdl:GetBoneCount() do
@@ -213,14 +214,17 @@ function SWEP:GetHiddenBones(wm)
 
     -- if hidefp or (self:GetAnimLockTime() >= CurTime() and reloadhidebones and self:ShouldTPIK() and wm) and index != 0 then
     if (hidefp and !wm) or (reloadhidebones and self:ShouldTPIK() and wm) and index != 0 then
-        for _, bone in ipairs(reloadhidebones[index] or {}) do
-            bones[bone] = true
-        end
+
+		
+		for i = 1, #reloadhidebones[index] do
+			bones[reloadhidebones[index][i]] = true
+		end
     else
         if hidebones and hide then
-            for _, bone in ipairs(hidebones) do
-                bones[bone] = true
-            end
+			
+			for i = 1, #hidebones do
+				bones[hidebones[i]] = true
+			end
         end
     end
 

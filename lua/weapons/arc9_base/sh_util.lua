@@ -76,11 +76,12 @@ function SWEP:IsAnimLocked()
 end
 
 function SWEP:RandomChoice(choice)
-    if istable(choice) then
-        choice = table.Random(choice)
+    local choiceanswer = choice
+	if istable(choiceanswer) then
+        choiceanswer = choiceanswer[math.random(#choiceanswer)]
     end
 
-    return choice
+    return choiceanswer
 end
 
 function SWEP:PatternWithRunOff(pattern, runoff, num)

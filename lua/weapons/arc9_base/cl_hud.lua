@@ -30,10 +30,11 @@ function SWEP:ShouldDrawCrosshair()
 end
 
 local function drawshadowrect(x, y, w, h, col)
-    surface.SetDrawColor(col)
-    surface.DrawRect(x, y, w, h)
-    surface.SetDrawColor(0, 0, 0, col.a * 100 / 150)
-    surface.DrawOutlinedRect(x - 1, y - 1, w + 2, h + 2)
+    local SurfaceC = surface
+	SurfaceC.SetDrawColor(col)
+    SurfaceC.DrawRect(x, y, w, h)
+    SurfaceC.SetDrawColor(0, 0, 0, col.a * 100 / 150)
+    SurfaceC.DrawOutlinedRect(x - 1, y - 1, w + 2, h + 2)
 end
 
 local lastgap = 0
@@ -161,10 +162,12 @@ function SWEP:DoDrawCrosshair(x, y)
     if self:GetProcessedValue("UseDispersion") then
         spread = spread + self:GetProcessedValue("DispersionSpread")
     end
-
-    cam.Start3D()
+	
+	local Camera = cam
+	
+    Camera.Start3D()
         local lool = ( EyePos() + ( EyeAngles():Forward() ) + ( spread * EyeAngles():Up() ) ):ToScreen()
-    cam.End3D()
+    Camera.End3D()
 
     local gau = 0
     gau = ( (scrh / 2) - lool.y )
@@ -184,22 +187,23 @@ function SWEP:DoDrawCrosshair(x, y)
     if self:GetReloading() then return true end
 
     local forcestd = self:GetProcessedValue("ForceStandardCrosshair", true)
+	local SurfaceC = surface
 
     if self:GetProcessedValue("CustomCrosshair", true) then
-        surface.SetDrawColor(col)
+        SurfaceC.SetDrawColor(col)
 
-        surface.SetMaterial( self:GetProcessedValue("CustomCrosshairMaterial", true) or sharemat )
+        SurfaceC.SetMaterial( self:GetProcessedValue("CustomCrosshairMaterial", true) or sharemat )
 
         local size = self:GetProcessedValue("CustomCrosshairSize", true) or 100
 
         if self:GetProcessedValue("CustomCrosshairSingle", true) then
-            surface.DrawTexturedRectRotated(x, y, (dotsize + gap) + size, (dotsize + gap) + size, 0) -- Central
+            SurfaceC.DrawTexturedRectRotated(x, y, (dotsize + gap) + size, (dotsize + gap) + size, 0) -- Central
         else
-            surface.DrawTexturedRectRotated(x - (dotsize / 2) - gap - ARC9.ScreenScale(11), y - (dotsize / 2), size, size, 0) -- Left
-            surface.DrawTexturedRectRotated(x - (dotsize / 2) + gap + ARC9.ScreenScale(11), y - (dotsize / 2), size, size, 180) -- Right
+            SurfaceC.DrawTexturedRectRotated(x - (dotsize / 2) - gap - ARC9.ScreenScale(11), y - (dotsize / 2), size, size, 0) -- Left
+            SurfaceC.DrawTexturedRectRotated(x - (dotsize / 2) + gap + ARC9.ScreenScale(11), y - (dotsize / 2), size, size, 180) -- Right
 
-            surface.DrawTexturedRectRotated(x - (dotsize / 2), y - (dotsize / 2) - gap - prong - ARC9.ScreenScale(7), size, size, -90) -- Top
-            surface.DrawTexturedRectRotated(x - (dotsize / 2), y + (dotsize / 2) + gap + ARC9.ScreenScale(10), size, size, 90) -- Bottom
+            SurfaceC.DrawTexturedRectRotated(x - (dotsize / 2), y - (dotsize / 2) - gap - prong - ARC9.ScreenScale(7), size, size, -90) -- Top
+            SurfaceC.DrawTexturedRectRotated(x - (dotsize / 2), y + (dotsize / 2) + gap + ARC9.ScreenScale(10), size, size, 90) -- Bottom
         end
     elseif self:GetProcessedValue("MissileCrosshair", true) then
         -- local dotcount = 4
@@ -286,19 +290,19 @@ function SWEP:DoDrawCrosshair(x, y)
         elseif style == 3 or style == 2 then
             local size = gap - gap * 0.5 + 15
 
-            surface.SetDrawColor(col)
-            surface.SetMaterial(sgcircleprong)
+            SurfaceC.SetDrawColor(col)
+            SurfaceC.SetMaterial(sgcircleprong)
 
-            surface.DrawTexturedRectRotated(x - (dotsize / 2) - gap, y - (dotsize / 2) + 1, size, size, 0) -- Left
-            surface.DrawTexturedRectRotated(x - (dotsize / 2) + 2 + gap, y - (dotsize / 2) + 1, size, size, 180) -- Right
+            SurfaceC.DrawTexturedRectRotated(x - (dotsize / 2) - gap, y - (dotsize / 2) + 1, size, size, 0) -- Left
+            SurfaceC.DrawTexturedRectRotated(x - (dotsize / 2) + 2 + gap, y - (dotsize / 2) + 1, size, size, 180) -- Right
             if style == 2 then
-                surface.DrawTexturedRectRotated(x - (dotsize / 2) + 1, y - (dotsize / 2) - gap - 1 , size, size, -90) -- Top
-                surface.DrawTexturedRectRotated(x - (dotsize / 2) + 1, y + (dotsize / 2) + gap , size, size, 90) -- Bottom
+                SurfaceC.DrawTexturedRectRotated(x - (dotsize / 2) + 1, y - (dotsize / 2) - gap - 1 , size, size, -90) -- Top
+                SurfaceC.DrawTexturedRectRotated(x - (dotsize / 2) + 1, y + (dotsize / 2) + gap , size, size, 90) -- Bottom
             end
         else
-            surface.SetDrawColor(col)
-            surface.SetMaterial((gap > 75 and sgcirclethin) or (gap < 30 and sgcirclethick) or sgcircle)
-            surface.DrawTexturedRectRotated(x, y, (dotsize + gap) * 2, (dotsize + gap) * 2, 0) -- Central
+            SurfaceC.SetDrawColor(col)
+            SurfaceC.SetMaterial((gap > 75 and sgcirclethin) or (gap < 30 and sgcirclethick) or sgcircle)
+            SurfaceC.DrawTexturedRectRotated(x, y, (dotsize + gap) * 2, (dotsize + gap) * 2, 0) -- Central
         end
 
         -- surface.DrawCircle(x, y, dotsize + gap - 1, col.r, col.g, col.b, 255) -- Middle White / Coloured One

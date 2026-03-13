@@ -53,7 +53,7 @@ local cvarGetBool = FindMetaTable("ConVar").GetBool
 
 function SWEP:Think()
     local owner = entityGetOwner(self)
-
+	
     if not IsValid(owner) then return end
     if owner:IsNPC() then return end
 

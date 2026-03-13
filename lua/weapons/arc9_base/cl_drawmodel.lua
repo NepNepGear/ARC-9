@@ -80,13 +80,13 @@ function SWEP:DrawCustomModel(wm, custompos, customang)
         end
     end
 
-    if lod < 2 then
+    if lod < 2 and mdl != nil then
         local onground = wm and !IsValid(owner)
     
         local hidebones = isnpc and {} or self:GetHiddenBones(wm)
-
-        for _, model in ipairs(mdl or {}) do
-            if model.IsAnimationProxy then continue end
+		for i = 1, #mdl or {} do
+			local model = mdl[i]
+			if model.IsAnimationProxy then continue end
             local slottbl = model.slottbl
             local atttbl = self:GetFinalAttTable(slottbl)
 
@@ -187,21 +187,9 @@ function SWEP:DrawCustomModel(wm, custompos, customang)
             if atttbl.DrawFunc then
                 atttbl.DrawFunc(self, model, wm)
             end
-
-        --     -- if model.Flare and !self:GetCustomize() then
-        --     --     if model.Flare.Attachment then
-        --     --         local attpos = model:GetAttachment(model.Flare.Attachment)
-
-        --     --         if attpos then
-        --     --             self:DrawLightFlare(attpos.Pos, -attpos.Ang:Right(), model.Flare.Color, model.Flare.Size, model.Flare.Focus)
-        --     --         else
-        --     --             self:DrawLightFlare(apos, aang:Forward(), model.Flare.Color, model.Flare.Size, model.Flare.Focus)
-        --     --         end
-        --     --     else
-        --     --         self:DrawLightFlare(apos, aang:Forward(), model.Flare.Color, model.Flare.Size, model.Flare.Focus)
-        --     --     end
-        --     -- end
-        end
+		end
+		
+       
     end
 end
 

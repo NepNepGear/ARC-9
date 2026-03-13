@@ -223,10 +223,11 @@ if CLIENT then
             local mdl = ARC9.PhysBulletModels[modelindex]
             bullet.ClientModel = ClientsideModel(mdl, RENDERGROUP_OPAQUE)
             bullet.ClientModel:SetMoveType(MOVETYPE_NONE)
-            table.insert(ARC9.CSModelPile, {Model = bullet.ClientModel, Weapon = weapon})
+			ARC9.CSModelPile[#ARC9.CSModelPile + 1] = {Model = bullet.ClientModel, Weapon = weapon}
         end
 
-        table.insert(ARC9.PhysBullets, bullet)
+
+		ARC9.PhysBullets[#ARC9.PhysBullets + 1] = bullet
     end)
 
     net.Receive("arc9_physbulletmodels", function()
@@ -291,16 +292,34 @@ local fireBullets2 = {
     Num = 1
 }
 
+
+
+local function firingPhysBulletCallback(att, btr, dmg)
+	local owner = att
+	local tracer = btr
+	local damagelog = dmg
+	local weapon = owner:GetActiveWeapon()
+	
+
+    --weapon.Penned = 0
+    weapon:AfterShotFunction(btr, dmg, weapon.RangeCounter, weapon.PenLeft, weapon.AlreadyPenned, weapon:GetUBGL())
+end
+
 function ARC9:ProgressPhysBullet(bullet, timestep)
     timestep = timestep or FrameTime()
-
-    if bullet.Dead then return end
+	local weapon = bullet.Weapon
+    if bullet.Dead then
+		weapon.RangeCounter = 0
+		weapon.PenLeft = 0
+		weapon.AlreadyPenned = false
+		return 
+	end
 
     local oldpos = bullet.Pos
     local oldvel = bullet.Vel
 
     local attacker = bullet.Attacker
-    local weapon = bullet.Weapon
+    
 
     if !IsValid(attacker) then bullet.Dead = true return end
 
@@ -461,18 +480,17 @@ function ARC9:ProgressPhysBullet(bullet, timestep)
                     if !game.SinglePlayer() and !bullet.FirstTimeProcessed then
                         SuppressHostEvents(bullet.Attacker)
                     end
-
+					
+					weapon.RangeCounter = bullet.Travelled
+					weapon.PenLeft = bullet.Penleft
+					weapon.AlreadyPenned = bullet.Damaged
+					
                     fireBullets2.Damage = weapon:GetProcessedValue("DamageMax")
                     fireBullets2.Force = weapon:GetProcessedValue("ImpactForce") / (weapon:GetProcessedValue("Num", true) or 1)
                     fireBullets2.Dir = bullet.Vel:GetNormalized()
                     fireBullets2.Src = oldpos
                     fireBullets2.Spread = vector_origin
-                    fireBullets2.Callback = function(att, btr, dmg)
-                        local range = bullet.Travelled
-
-                        weapon.Penned = 0
-                        weapon:AfterShotFunction(btr, dmg, range, bullet.Penleft, bullet.Damaged, bullet.Secondary)
-                    end
+                    fireBullets2.Callback = firingPhysBulletCallback
 
                     bullet.Attacker:FireBullets(fireBullets2)
 

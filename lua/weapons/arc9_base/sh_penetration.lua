@@ -25,13 +25,30 @@ local arc9_mod_penetration = GetConVar("arc9_mod_penetration")
 local ARC9_bullet_physics = GetConVar("ARC9_bullet_physics")
 local ARC9_ricochet = GetConVar("ARC9_ricochet")
 
+local function firingPenBulletCallback(att,btr,dmg) 
+	local owner = att
+	local tracer = btr
+	local damagelog = dmg
+	local weapon = owner:GetActiveWeapon()
+	weapon.RangeCounter = weapon.RangeCounter + (tracer.HitPos - tracer.StartPos):Length()
+    
+	weapon:AfterShotFunction(tracer, damagelog, weapon.RangeCounter, weapon.PenLeft, weapon.AlreadyPenned)
+
+end
+
 function SWEP:Penetrate(tr, range, penleft, alreadypenned)
     if !arc9_mod_penetration:GetBool() then return end
 
     if !IsValid(self) then return end
     if !IsValid(self:GetOwner()) then return end
 
-    if self.Penned > self.MaxPenetrationLayers then return end
+    if self.Penned > self.MaxPenetrationLayers then
+		self.RangeCounter = 0
+		self.PenLeft = 0
+		self.AlreadyPenned = false
+		return 
+	
+	end
 
     self.Penned = self.Penned + 1
 
@@ -192,25 +209,17 @@ function SWEP:Penetrate(tr, range, penleft, alreadypenned)
             })
         else
             if !ARC9.IsPointOutOfBounds(endpos) then
-                local bullet_table = {
+                self.PenLeft = penleft
+				self.AlreadyPenned = alreadypenned
+				
+				local bullet_table = {
                     Damage = self:GetValue("Damage_Max"),
                     Force = 4,
                     Tracer = 0,
                     Num = 1,
                     Dir = dir,
                     Src = endpos,
-                    Callback = function(att, btr, dmg)
-                        range = range + (btr.HitPos - btr.StartPos):Length()
-                        self:AfterShotFunction(btr, dmg, range, penleft, alreadypenned)
-
-                        -- if ARC9.Dev(2) then
-                        -- 	if SERVER then
-                        -- 		debugoverlay.Cross(btr.HitPos, 4, 5, Color(255, 0, 0), false)
-                        -- 	else
-                        -- 		debugoverlay.Cross(btr.HitPos, 4, 5, Color(255, 255, 255), false)
-                        -- 	end
-                        -- end
-                    end
+                    Callback = firingPenBulletCallback
                 }
                 if table.Count(alreadypenned) == 1 then
                     --We penetrated only one entity.

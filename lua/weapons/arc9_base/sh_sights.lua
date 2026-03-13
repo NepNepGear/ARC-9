@@ -288,6 +288,7 @@ do
     local swepSwitchMultiSight = SWEP.SwitchMultiSight
     local dtapconvar = GetConVar("arc9_dtap_sights")
     local cvarGetBool = FindMetaTable("ConVar").GetBool
+	
 
     function SWEP:ThinkSights()
         -- if self:GetSafe() then return end
@@ -305,14 +306,15 @@ do
         if oldamt ~= amt then
             self:SetSightAmount(amt)
         end
-
+		--print(swepDt.SightAmount)
         local owner = entityGetOwner(self)
         local toggle = swepToggleADS(self)
         local inatt = playerKeyDown(owner, IN_ATTACK2)
         local pratt = playerKeyPressed(owner, IN_ATTACK2)
 
         if toggle then
-            if sighted and pratt then
+            
+			if sighted and pratt then
                 swepExitSights(self)
             elseif not sighted and (inatt and self:GetSprintAmount() > 0 or pratt) then
                 self:EnterSights()

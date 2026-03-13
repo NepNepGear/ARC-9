@@ -2,6 +2,10 @@ local cancelmults = ARC9.CancelMultipliers[engine.ActiveGamemode()] or ARC9.Canc
 
 local swepGetProcessedValue = SWEP.GetProcessedValue
 local swepGetValue = SWEP.GetValue
+SWEP.RangeCounter = 0
+SWEP.PenLeft = 0
+SWEP.AlreadyPenned = false
+
 
 local sp = game.SinglePlayer()
 
@@ -92,9 +96,9 @@ local soundtab6 = {
 
 function SWEP:DoShootSounds()
     if swepGetValue(self, "NoShootSoundAfterFirstShot") and self:GetNthShot() > 0 then return end
-
+	local randommathfunction = math.Rand
     local pvar = swepGetProcessedValue(self, "ShootPitchVariation", true)
-    local pvrand = math.Rand(-pvar, pvar) -- util.SharedRandom("ARC9_sshoot", -pvar, pvar) -- who gives a shit??? plus it broke af
+    local pvrand = randommathfunction(-pvar, pvar) -- util.SharedRandom("ARC9_sshoot", -pvar, pvar) -- who gives a shit??? plus it broke af
     local randomChoice = self.RandomChoice
 
     local sstr = lsstr
@@ -425,10 +429,8 @@ function SWEP:DoPrimaryAttack()
         local banim = anim
 
         if !self.SuppressCumulativeShoot then
-            for i = 1, burstCount + 1 do
-                if self:HasAnimation(anim .. "_" .. i, true) then
-                    banim = anim .. "_" .. i
-                end
+            if self:HasAnimation(anim .. "_" .. burstCount + 1, true) then
+                banim = anim .. "_" .. burstCount + 1
             end
         end
 
@@ -629,6 +631,32 @@ function SWEP:ShootPhysBulletBinding(pos, ang, spread, bullettbl, numm)
     end
 end
 
+local function firingBulletCallback(att, btr, dmg)
+	local owner = att
+	local tracer = btr
+	local damagelog = dmg
+	local weapon = owner:GetActiveWeapon()
+	local bulletPhysics = GetConVar("arc9_bullet_physics")
+	local bulletPhysicsshotguns = GetConVar("arc9_bullet_physics_shotguns")
+	
+	local shouldphys = (swepGetProcessedValue(weapon, "AlwaysPhysBullet", true) or bulletPhysics:GetBool()) and !(att:IsNPC() or swepGetProcessedValue(weapon, "NeverPhysBullet", true) or (swepGetProcessedValue(weapon, "Num") > 2 and !bulletPhysicsshotguns:GetBool()))
+	local distance = !shouldphys and swepGetProcessedValue(weapon, "Distance") or 750
+	--rangecheck = true -- callback only called if bullet hits something
+    weapon.RangeCounter = distance * btr.Fraction
+	
+    dmg:SetDamage(swepGetProcessedValue(weapon, "DamageMax"))
+
+    weapon:AfterShotFunction(tracer, damagelog, weapon.RangeCounter, swepGetProcessedValue(weapon, "Penetration", true), {})
+
+    -- if ARC9.Dev(2) then
+    --     if SERVER then
+    --         debugoverlay.Cross(btr.HitPos, 4, 5, Color(255, 0, 0), false)
+    --     else
+    --         debugoverlay.Cross(btr.HitPos, 4, 5, Color(255, 255, 255), false)
+    --     end
+	-- end
+end
+
 function SWEP:DoProjectileAttack(pos, ang, spread)
     if swepGetProcessedValue(self, "ShootEnt", true) then
         self:ShootRocket()
@@ -672,7 +700,7 @@ function SWEP:DoProjectileAttack(pos, ang, spread)
                     veh = owner:GetVehicle()
                 end
 
-
+			
                 if swepGetProcessedValue(self, "UseDispersion", true) then
                     local seed = 1337 + self:EntIndex() + engine.TickCount()
                     local a = util.SharedRandom("arc9_physbullet3", 0, 360, seed)
@@ -698,24 +726,7 @@ function SWEP:DoProjectileAttack(pos, ang, spread)
                 fireBullets.HullSize = swepGetProcessedValue(self, "HullSize", true)
                 fireBullets.IgnoreEntity = veh
                 fireBullets.Distance = distance
-                fireBullets.Callback = function(att, btr, dmg)
-                    rangecheck = true -- callback only called if bullet hits something
-                    local range = distance * btr.Fraction
-
-                    dmg:SetDamage(swepGetProcessedValue(self, "DamageMax"))
-
-                    self.Penned = 0
-                    self:AfterShotFunction(btr, dmg, range, swepGetProcessedValue(self, "Penetration", true), {})
-
-                    -- if ARC9.Dev(2) then
-                    --     if SERVER then
-                    --         debugoverlay.Cross(btr.HitPos, 4, 5, Color(255, 0, 0), false)
-                    --     else
-                    --         debugoverlay.Cross(btr.HitPos, 4, 5, Color(255, 255, 255), false)
-                    --     end
-                    -- end
-                end
-
+                fireBullets.Callback = firingBulletCallback
                 owner:FireBullets(fireBullets)
 
                 if owner:IsPlayer() then
@@ -739,6 +750,8 @@ local arc9_npc_equality = GetConVar("arc9_npc_equality")
 local soundTab2 = {
     name = "impact"
 }
+
+
 
 function SWEP:AfterShotFunction(tr, dmg, range, penleft, alreadypenned, secondary)
     if !IsFirstTimePredicted() and !sp then return end
@@ -891,20 +904,25 @@ function SWEP:AfterShotFunction(tr, dmg, range, penleft, alreadypenned, secondar
     elseif traceEntity then
         alreadypenned[traceEntity] = true
     end
-
-    self:Penetrate(table.Copy(tr), range, penleft, alreadypenned)
+	
+	self.RangeCounter = range
+	self.PenLeft = penleft
+	self.AlreadyPenned = alreadypenned
+	
+    self:Penetrate(tr, self.RangeCounter, self.PenLeft, self.AlreadyPenned)
 
     self:SetUBGL(lastsecondary)
 end
 
 function SWEP:ShouldTracer()
     local tracerNum = swepGetProcessedValue(self, "TracerNum", true)
-
+	local tracerfinalmag = swepGetProcessedValue(self, "TracerFinalMag", true)
+	local clip = self:Clip1()
     if tracerNum <= 0 then return false end
 
     local shouldtracer = self:GetNthShot() % tracerNum == 0
 
-    if self:Clip1() <= swepGetProcessedValue(self, "TracerFinalMag", true) then
+    if clip <= tracerfinalmag then
         shouldtracer = true
     end
 
@@ -966,7 +984,7 @@ local dmgmodcvar = GetConVar("arc9_mod_damage") -- stats handled in sh_0_stats, 
 
 function SWEP:GetDamageAtRange(range)
     local damagelut = swepGetProcessedValue(self, "DamageLookupTable", true)
-
+	
     local dmgMin = swepGetProcessedValue(self, "DamageMin")
 
     local num = swepGetProcessedValue(self, "Num")
@@ -975,21 +993,21 @@ function SWEP:GetDamageAtRange(range)
     end
 
     local dmgv = dmgMin
-
+	local mathClamp = math.Clamp
     if damagelut then
         local stupidmult = dmgmodcvar:GetFloat()
-
-        for i, tbl in ipairs(damagelut) do
-            if range < tbl[1] then
-                if swepGetProcessedValue(self, "CurvedDamageScaling", true) and i > 1 then
+		
+		for i = 1, #damagelut do
+			if range < damagelut[i][1] then
+				if swepGetProcessedValue(self, "CurvedDamageScaling", true) and i > 1 then
                     local tbl2 = damagelut[i - 1]
-                    dmgv = Lerp(1 - math.Clamp((tbl[1] - range) / (tbl[1] - tbl2[1]), 0, 1), tbl2[2] * stupidmult, tbl[2] * stupidmult)
+                    dmgv = Lerp(1 - mathClamp((damagelut[i][1] - range) / (damagelut[i][1] - tbl2[1]), 0, 1), tbl2[2] * stupidmult, damagelut[i][2] * stupidmult)
                 else
-                    dmgv = tbl[2] * stupidmult
+                    dmgv = damagelut[i][2] * stupidmult
                 end
                 break
             end
-        end
+		end
 
         -- dmgv = dmgv * dmgmodcvar:GetFloat()
     else

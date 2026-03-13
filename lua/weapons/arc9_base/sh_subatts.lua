@@ -43,22 +43,26 @@ end
 
 function SWEP:GetSubSlotList()
     local atts = {}
-
-    for _, i in ipairs(self.Attachments or {}) do
-        table.Add(atts, self:AttTreeToList(i))
-    end
+	local attach = self.Attachments or {}
+	
+	for i = 0, #attach do
+		table.Add(atts, self:AttTreeToList(attach[i]))
+	end
+	
 
     return atts
 end
 
 function SWEP:GetAttachmentList()
     local atts = {}
-
-    for _, i in ipairs(self:GetSubSlotList()) do
-        if i.Installed then
-            table.insert(atts, i.Installed)
+	local subSlot = self:GetSubSlotList()
+	
+	for i = 1, #subSlot do 
+		if subSlot[i].Installed then
+			atts[#atts + 1] = subSlot[i].Installed
         end
-    end
+	end
+
 
     return atts
 end
@@ -74,17 +78,20 @@ function SWEP:GetAttachmentElements()
         local ele = self.AttachmentElements[i]
 
         if !ele then continue end
-
-        table.insert(eletables, ele)
+		
+		eletables[#eletables + 1] = ele
     end
-
-    for _, slot in ipairs(self:GetSubSlotList()) do
-        local atttbl = self:GetFinalAttTable(slot)
+	
+	local SubSlot = self:GetSubSlotList()
+	
+	for i = 1, #SubSlot do
+		local atttbl = self:GetFinalAttTable(slot)
 
         if atttbl.Element then
-            table.insert(eletables, atttbl.Element)
+           eletables[#eletables + 1] = atttbl.Element
         end
-    end
+	end
+
 
     self.ElementTablesCache = eletables
 

@@ -316,21 +316,23 @@ local function ArcticBreadDarsuBob(self, pos, ang)
     local ts = 0 -- self:GetTraversalSprintAmount()
     -- ts = 1
     if self:GetCustomize() then return pos, ang end
-
+	local mathApproach = math.Approach
+	local mathSin = math.sin
+	local mathClamp = math.Clamp
     local owner = self:GetOwner()
     local ft = FrameTime()
 
     local sharedmult = self:GetIsSprinting() and self:GetProcessedValue("BobSprintMult", true) or self:GetProcessedValue("BobWalkMult", true)
     local velocityangle = owner:GetVelocity()
     local v = velocityangle:Length()
-    v = math.Clamp(v, 0, 350)
-    self.ViewModelBobVelocity = math.Approach(self.ViewModelBobVelocity, v, ft * 10000)
-    local d = math.Clamp(self.ViewModelBobVelocity / 350, 0, 1)
+    v = mathClamp(v, 0, 350)
+    self.ViewModelBobVelocity = mathApproach(self.ViewModelBobVelocity, v, ft * 10000)
+    local d = mathClamp(self.ViewModelBobVelocity / 350, 0, 1)
     -- d = math.ease.InSine(d)
     if owner:OnGround() and owner:GetMoveType() != MOVETYPE_NOCLIP then
-        self.ViewModelNotOnGround = math.Approach(self.ViewModelNotOnGround, 0, ft / 0.1)
+        self.ViewModelNotOnGround = mathApproach(self.ViewModelNotOnGround, 0, ft / 0.1)
     else
-        self.ViewModelNotOnGround = math.Approach(self.ViewModelNotOnGround, 1, ft / 0.1)
+        self.ViewModelNotOnGround = mathApproach(self.ViewModelNotOnGround, 1, ft / 0.1)
     end
     
     local sightamount = self:GetSightAmount() - ((self.Peeking and !self.PeekingIsSight) and 0.72 or 0.1)
@@ -342,7 +344,7 @@ local function ArcticBreadDarsuBob(self, pos, ang)
 
     local sidemove = (owner:GetVelocity():Dot(owner:EyeAngles():Right()) / owner:GetMaxSpeed()) * 4 * (1.5-sightamount)
     -- local sidemove = ((owner:KeyDown(IN_MOVERIGHT) and 1 or 0) - (owner:KeyDown(IN_MOVELEFT) and 1 or 0)) * 3 * (1.5-sightamount)
-    smoothsidemove = Lerp(math.Clamp(ft*8, 0, 1), smoothsidemove, sidemove)
+    smoothsidemove = Lerp(mathClamp(ft*8, 0, 1), smoothsidemove, sidemove)
 
     local crouchmult = 1
     if owner:Crouching() then 
@@ -350,28 +352,28 @@ local function ArcticBreadDarsuBob(self, pos, ang)
         step = 6
     end
     
-    local jumpmove = math.Clamp(math.ease.InExpo(math.Clamp(velocityangle.z, -150, 0)/-150)*0.5 + math.ease.InExpo(math.Clamp(velocityangle.z, 0, 350)/350)*-50, -4, 2.5) * 0.5   -- crazy math for jump movement
-    smoothjumpmove = Lerp(math.Clamp(ft*8, 0, 1), smoothjumpmove, jumpmove)
-    local smoothjumpmove2 = math.Clamp(smoothjumpmove, -0.3, 0.01) * (1.5-sightamount) * 2
+    local jumpmove = mathClamp(math.ease.InExpo(mathClamp(velocityangle.z, -150, 0)/-150)*0.5 + math.ease.InExpo(mathClamp(velocityangle.z, 0, 350)/350)*-50, -4, 2.5) * 0.5   -- crazy math for jump movement
+    smoothjumpmove = Lerp(mathClamp(ft*8, 0, 1), smoothjumpmove, jumpmove)
+    local smoothjumpmove2 = mathClamp(smoothjumpmove, -0.3, 0.01) * (1.5-sightamount) * 2
 
 
     if owner.GetSliding then if owner:GetSliding() then mag = 0 step = 5 smoothsidemove = 0 end end
     
 
     if self:GetIsSprinting() then 
-        pos = pos - (ang:Up() * math.sin(self.BobCT * step) * 0.45 * ((math.sin(self.BobCT * 3.515) * 0.2) + 1) * mag * sharedmult)
-        pos = pos + (ang:Forward() * math.sin(self.BobCT * step * 0.3) * 0.13 * ((math.sin(self.BobCT * 2) * ts * 1.25) + 2) * ((math.sin(self.BobCT * 0.615) * 0.2) + 2) * mag * sharedmult)
-        pos = pos + (ang:Right() * (math.sin(self.BobCT * step * 0.5) + (math.cos(self.BobCT * step * 0.5))) * 0.55 * mag * sharedmult)
-        ang:RotateAroundAxis(ang:Forward(), math.sin(self.BobCT * step * 0.5) * ((math.sin(self.BobCT * 6.151) * 0.2) + 1) * 9 * d * sharedmult + smoothsidemove * 1.5)
-        ang:RotateAroundAxis(ang:Right(), math.sin(self.BobCT * step * 0.12) * ((math.sin(self.BobCT * 1.521) * 0.2) + 1) * 1 * d * sharedmult)
-        ang:RotateAroundAxis(ang:Up(), math.sin(self.BobCT * step * 0.5) * ((math.sin(self.BobCT * 1.521) * 0.2) + 1) * 6 * d * sharedmult)
+        pos = pos - (ang:Up() * mathSin(self.BobCT * step) * 0.45 * ((mathSin(self.BobCT * 3.515) * 0.2) + 1) * mag * sharedmult)
+        pos = pos + (ang:Forward() * mathSin(self.BobCT * step * 0.3) * 0.13 * ((mathSin(self.BobCT * 2) * ts * 1.25) + 2) * ((mathSin(self.BobCT * 0.615) * 0.2) + 2) * mag * sharedmult)
+        pos = pos + (ang:Right() * (mathSin(self.BobCT * step * 0.5) + (math.cos(self.BobCT * step * 0.5))) * 0.55 * mag * sharedmult)
+        ang:RotateAroundAxis(ang:Forward(), mathSin(self.BobCT * step * 0.5) * ((mathSin(self.BobCT * 6.151) * 0.2) + 1) * 9 * d * sharedmult + smoothsidemove * 1.5)
+        ang:RotateAroundAxis(ang:Right(), mathSin(self.BobCT * step * 0.12) * ((mathSin(self.BobCT * 1.521) * 0.2) + 1) * 1 * d * sharedmult)
+        ang:RotateAroundAxis(ang:Up(), mathSin(self.BobCT * step * 0.5) * ((mathSin(self.BobCT * 1.521) * 0.2) + 1) * 6 * d * sharedmult)
         ang:RotateAroundAxis(ang:Right(), smoothjumpmove2 * 5)
     else
-        pos = pos - (ang:Up() * math.sin(self.BobCT * step) * 0.1 * ((math.sin(self.BobCT * 3.515) * 0.2) + 1.5) * mag * crouchmult * sharedmult) - (ang:Up() * smoothsidemove * -0.05) - (ang:Up() * smoothjumpmove2 * 0.2)
-        pos = pos + (ang:Forward() * math.sin(self.BobCT * step * 0.3) * 0.11 * ((math.sin(self.BobCT * 2) * ts * 1.25) + 1) * ((math.sin(self.BobCT * 0.615) * 0.2) + 1) * mag * sharedmult)
-        pos = pos + (ang:Right() * (math.sin(self.BobCT * step * 0.5) + (math.cos(self.BobCT * step * 0.5))) * 0.2 * mag * sharedmult)
-        ang:RotateAroundAxis(ang:Forward(), math.sin(self.BobCT * step * 0.5) * ((math.sin(self.BobCT * 6.151) * 0.2) + 1) * 5 * d * sharedmult + smoothsidemove)
-        ang:RotateAroundAxis(ang:Right(), math.sin(self.BobCT * step * 0.12) * ((math.sin(self.BobCT * 1.521) * 0.2) + 1) * 0.1 * d * sharedmult)
+        pos = pos - (ang:Up() * mathSin(self.BobCT * step) * 0.1 * ((mathSin(self.BobCT * 3.515) * 0.2) + 1.5) * mag * crouchmult * sharedmult) - (ang:Up() * smoothsidemove * -0.05) - (ang:Up() * smoothjumpmove2 * 0.2)
+        pos = pos + (ang:Forward() * mathSin(self.BobCT * step * 0.3) * 0.11 * ((mathSin(self.BobCT * 2) * ts * 1.25) + 1) * ((mathSin(self.BobCT * 0.615) * 0.2) + 1) * mag * sharedmult)
+        pos = pos + (ang:Right() * (mathSin(self.BobCT * step * 0.5) + (math.cos(self.BobCT * step * 0.5))) * 0.2 * mag * sharedmult)
+        ang:RotateAroundAxis(ang:Forward(), mathSin(self.BobCT * step * 0.5) * ((mathSin(self.BobCT * 6.151) * 0.2) + 1) * 5 * d * sharedmult + smoothsidemove)
+        ang:RotateAroundAxis(ang:Right(), mathSin(self.BobCT * step * 0.12) * ((mathSin(self.BobCT * 1.521) * 0.2) + 1) * 0.1 * d * sharedmult)
         ang:RotateAroundAxis(ang:Right(), smoothjumpmove2 * 5)
     end
 

@@ -4,9 +4,10 @@ local vignette = Material("arc9/bgvignette.png", "mips smooth")
 
 local adsblur = Material("pp/arc9/adsblur")
 local function arc9toytown(amount) -- cool ass blur
-    if amount > 0 then
+    local camera = cam
+	if amount > 0 then
         local scrw, scrh = ScrW(), ScrH()
-        cam.Start2D()
+        camera.Start2D()
             surface.SetMaterial(adsblur)
             surface.SetDrawColor(255, 255, 255, 255)
 
@@ -14,7 +15,7 @@ local function arc9toytown(amount) -- cool ass blur
                 render.CopyRenderTargetToTexture(render.GetScreenEffectTexture())
                 surface.DrawTexturedRect(scrw*.5-scrh*.5, scrh*.58, scrh, scrh*0.42)
             end
-        cam.End2D()
+        camera.End2D()
     end
 end
 
@@ -34,7 +35,9 @@ local arc9_fx_adsblur = GetConVar("arc9_fx_adsblur")
 
 
 function SWEP:PreDrawViewModel(vm, weapon, ply, flags)
-    if ARC9.RTScopeRender then -- basically a copy of code in that func for rt barrels but without useless stuff and bad stuff, and also offset of cam in scope
+    local camera = cam
+	local Rendering = render
+	if ARC9.RTScopeRender then -- basically a copy of code in that func for rt barrels but without useless stuff and bad stuff, and also offset of cam in scope
         self:DoBodygroups(false)
         local vm = self:GetVM()
         if self.HasSightsPoseparam then
@@ -49,8 +52,8 @@ function SWEP:PreDrawViewModel(vm, weapon, ply, flags)
         vmpso = vmpso - vmagn:Up() * spso.z
         vmpso = vmpso - vmagn:Right() * spso.x
 
-        cam.Start3D(vmpso, nil, ARC9.RTScopeRenderFOV * 0.85, nil, nil, nil, nil, 3, 100040)
-        render.DepthRange( 0.1, 0.1 )
+        camera.Start3D(vmpso, nil, ARC9.RTScopeRenderFOV * 0.85, nil, nil, nil, nil, 3, 100040)
+        Rendering.DepthRange( 0.1, 0.1 )
 
         return
     end
@@ -62,6 +65,7 @@ function SWEP:PreDrawViewModel(vm, weapon, ply, flags)
 
     local getsights = self:GetSight()
     local sightamount = self:GetSightAmount()
+	
 
 	flags = flags or STUDIO_RENDER
     local isDepthPass = ( bit.band( flags, STUDIO_SSAODEPTHTEXTURE ) != 0 || bit.band( flags, STUDIO_SHADOWDEPTHTEXTURE ) != 0 )
@@ -89,22 +93,22 @@ function SWEP:PreDrawViewModel(vm, weapon, ply, flags)
     	    end
 
     	    local scrw, scrh = ScrW(), ScrH()
-
-    	    cam.Start2D()
-            	surface.SetDrawColor(15, 15, 15, 180 * custdelta)
-            	surface.DrawRect(0, 0, scrw, scrh)
-            	surface.SetDrawColor(0, 0, 0, 255 * custdelta)
+			local SurfaceTemp = surface
+    	    camera.Start2D()
+            	SurfaceTemp.SetDrawColor(15, 15, 15, 180 * custdelta)
+            	SurfaceTemp.DrawRect(0, 0, scrw, scrh)
+            	SurfaceTemp.SetDrawColor(0, 0, 0, 255 * custdelta)
             	if arc9_hud_lightmode:GetBool() then
-                	surface.SetMaterial(vignette)
-                	surface.DrawTexturedRect(0, 0, scrw, scrh)
+                	SurfaceTemp.SetMaterial(vignette)
+                	SurfaceTemp.DrawTexturedRect(0, 0, scrw, scrh)
             	end
 
             	if arc9_dev_greenscreen:GetBool() then
                 	-- print(GetConVar("mat_bloom_scalefactor_scalar"):SetFloat())
-                	surface.SetDrawColor(0, 255, 0, 255 * custdelta)
-                	surface.DrawRect(0, 0, scrw, scrh)
+                	SurfaceTemp.SetDrawColor(0, 255, 0, 255 * custdelta)
+                	SurfaceTemp.DrawRect(0, 0, scrw, scrh)
             	end
-        	cam.End2D()
+        	camera.End2D()
     	end
 
     	if ((shouldrtblur and blurenable) or (custdelta > 0 and blurtarget > 0)) and system.HasFocus() then
@@ -161,7 +165,7 @@ function SWEP:PreDrawViewModel(vm, weapon, ply, flags)
     self.ViewModelFOV = vmfov
 
     if !arc9_dev_benchgun:GetBool() then
-        cam.Start3D(nil, nil, self:WidescreenFix(vmfov), nil, nil, nil, nil, 0.5, 10000)
+        camera.Start3D(nil, nil, self:WidescreenFix(vmfov), nil, nil, nil, nil, 0.5, 10000)
     end
 
     -- self:DrawCustomModel(true, EyePos() + EyeAngles():Forward() * 16, EyeAngles())
@@ -184,8 +188,8 @@ function SWEP:PreDrawViewModel(vm, weapon, ply, flags)
     	vm:SetMaterial(self:GetProcessedValue("Material", true))
 	end
 
-    render.DepthRange( 0.0, 0.1 )
-    if ARC9.PresetCam or custdelta > 0 then cam.IgnoreZ(true) end
+    Rendering.DepthRange( 0.0, 0.1 )
+    if ARC9.PresetCam or custdelta > 0 then camera.IgnoreZ(true) end
 
     self:SetFiremodePose()
     
@@ -196,17 +200,18 @@ function SWEP:PreDrawViewModel(vm, weapon, ply, flags)
     vm:InvalidateBoneCache()
     
     if sightamount > 0.75 and getsights.FlatScope and !getsights.FlatScopeKeepVM then
-        render.SetBlend(0)
+        Rendering.SetBlend(0)
     end
 end
 
 function SWEP:ViewModelDrawn(ent, flags)
 	flags = flags or STUDIO_RENDER
     local isDepthPass = ( bit.band( flags, STUDIO_SSAODEPTHTEXTURE ) != 0 || bit.band( flags, STUDIO_SHADOWDEPTHTEXTURE ) != 0 )
+	local Rendering = render
 	
     self.StoredVMAngles = self:GetCameraControl()
     self:DrawCustomModel(false)
-    render.DepthRange( 0.0, 0.1 )
+    Rendering.DepthRange( 0.0, 0.1 )
     self:DoRHIK()
     if ARC9.RTScopeRender then return end
     self:PreDrawThirdArm()
@@ -226,66 +231,70 @@ function SWEP:ViewModelDrawn(ent, flags)
 
     if !isDepthPass then
 	    local newpcfs = {}
-	
-	    for _, pcf in ipairs(self.PCFs) do
-	        if IsValid(pcf) then
-	            pcf:Render()
-	            table.insert(newpcfs, pcf)
+		local pcfs = self.PCFs
+		for i = 1 , #pcfs do
+			if IsValid(pcfs[i]) then
+	            pcfs[i]:Render()
+				newpcfs[#newpcfs+1] = pcfs[i]
 	        end
-	    end
+		end
 	
-	    if !inrt then self.PCFs = newpcfs end
+	
+	    if !inrt then pcfs = newpcfs end
 	end
 
     local newfx = {}
-
-    for _, fx in ipairs(self.ActiveEffects) do
-        if IsValid(fx) then
-            if !fx.VMContext then continue end
-            fx:DrawModel()
-            table.insert(newfx, fx)
+	local activeEffects = self.ActiveEffects
+	for i = 1, #activeEffects do
+		if IsValid(activeEffects[i]) then
+            if !activeEffects[i].VMContext then continue end
+            activeEffects[i]:DrawModel()
+			newfx[#newfx + 1] = activeEffects[i]:DrawModel()
         end
-    end
+	end
 
-    if !inrt then self.ActiveEffects = newfx end
+    if !inrt then activeEffects = newfx end
 end
 
 function SWEP:PostDrawViewModel(vm, weapon, ply, flags)
     if !IsValid(self:GetVM()) then return end
 	flags = flags or STUDIO_RENDER
     local isDepthPass = ( bit.band( flags, STUDIO_SSAODEPTHTEXTURE ) != 0 || bit.band( flags, STUDIO_SHADOWDEPTHTEXTURE ) != 0 )
-	
+	local camera = cam
+	local Rendering = render
     local inrt = ARC9.RTScopeRender
 
     self:DrawTranslucentPass()
 
 	if !isDepthPass then
     	local newmzpcfs = {}
-
-    	for _, pcf in ipairs(self.MuzzPCFs) do
-    	    if IsValid(pcf) then
-    	        pcf:Render()
-    	        table.insert(newmzpcfs, pcf)
+		local MuzzleParticles = self.MuzzPCFs
+		
+		for i = 0, #MuzzleParticles do
+			if IsValid(MuzzleParticles[i]) then
+    	        MuzzleParticles[i]:Render()
+				newmzpcfs[#newmzpcfs + 1] = MuzzleParticles[i]
     	    end
-    	end
+		end
+		
 
-    	if !inrt then self.MuzzPCFs = newmzpcfs end
+    	if !inrt then MuzzleParticles = newmzpcfs end
 	end
 
     if ARC9.PresetCam then return end
 
-    cam.IgnoreZ(false)
-    render.SetBlend(1)
+    camera.IgnoreZ(false)
+    Rendering.SetBlend(1)
 
     if !arc9_dev_benchgun:GetBool() then
-        cam.End3D()
+        camera.End3D()
     end
 
 	if isDepthPass then return end
     if inrt then return end
 
     self.RenderingHolosight = false
-    cam.Start3D(nil, nil, self:WidescreenFix(self:GetViewModelFOV()), nil, nil, nil, nil, 1, 10000)
+    camera.Start3D(nil, nil, self:WidescreenFix(self:GetViewModelFOV()), nil, nil, nil, nil, 1, 10000)
     if self.VModel then
         for _, model in ipairs(self.VModel) do
             local slottbl = model.slottbl
@@ -298,7 +307,7 @@ function SWEP:PostDrawViewModel(vm, weapon, ply, flags)
             end
         end
     end
-    cam.End3D()
+    camera.End3D()
 
     if arc9_fx_adsblur:GetBool() and self:GetSight().Blur != false and !self.Peeking then arc9toytown(self:GetSightAmount()) end -- cool ass blur
     -- render.UpdateFullScreenDepthTexture()
